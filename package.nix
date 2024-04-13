@@ -1,11 +1,14 @@
-{ stdenv
+{ stdenv_32bit
 , fetchFromGitHub
 , which
+, makeWrapper
 }:
 
-stdenv.mkDerivation {
+stdenv_32bit.mkDerivation {
   pname = "movfuscator";
   version = "unstable-2020.2.11";
+
+  dontPatchELF = true;
 
   postPatch = let 
     lcc = fetchFromGitHub {
@@ -21,13 +24,17 @@ stdenv.mkDerivation {
     chmod -R 777 lcc
 
     substituteInPlace build.sh check.sh \
-      --replace 'git reset' 'echo git reset' \
-      --replace 'BUILDDIR=`pwd`/build' BUILDDIR=$out/share/lcc-movcc
+      --replace-quiet 'git reset' 'echo git reset' \
+      --replace-quiet 'BUILDDIR=`pwd`/build' BUILDDIR=$out/share/lcc-movcc
 
-    substituteInPlace **/*.c \
-      --replace-quiet /usr/bin/as "$(which as)" \
-      --replace-quiet /usr/bin/ld "$(which ld)" \
-      --replace-quiet /usr/bin/cpp "$out/share/lcc-movcc/cpp"
+    for item in **/*; do
+      substituteInPlace $item \
+        --replace-quiet /usr/bin/as "$(which as)" \
+        --replace-quiet /usr/bin/ld "$(which ld)" \
+        --replace-quiet /usr/bin/cpp "$out/share/lcc-movcc/cpp" \
+        --replace-quiet /lib/ld-linux.so.2 "$(cat ${stdenv_32bit.cc}/nix-support/dynamic-linker)" \
+          || true
+    done
   '';
 
   src = ./.;
@@ -36,13 +43,15 @@ stdenv.mkDerivation {
     NIX_CFLAGS_COMPILE = "-D LCCDIR=\"${placeholder "out"}/share/lcc-movcc/\"";
   };
 
-  nativeBuildInputs = [ which ];
+  nativeBuildInputs = [ which makeWrapper ];
 
   buildPhase = ''
   runHook preBuild
+
+  env
   
-  bash build.sh
-  
+  bash build.sh || true
+    
   runHook postBuild
   '';
 
@@ -68,7 +77,12 @@ stdenv.mkDerivation {
 
   mkdir -p $out/bin
 
-  ln -s $out/share/lcc-movcc/movcc $out/bin/movcc
+  for item in $out/share/lcc-movcc/*; do
+    if [ -x "$(realpath "$item")" ]; then
+      ln -s $item $out/bin
+    fi
+  done
+  # ln -s $out/share/lcc-movcc/movcc $out/bin/movcc
   # install -m755 build/lcc $out/bin
   # ln -s $out/bin/lcc $out/bin/movcc
 

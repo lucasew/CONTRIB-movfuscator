@@ -25,9 +25,9 @@ includes prominent notice of these three paragraphs for those parts of this
 code that are retained.
 */
 
+#include "softfloat_inline.c"
 #include "milieu.h"
 #include "softfloat.h"
-#include "softfloat_inline.c"
 #include "softfloat_specialize.c"
 
 /*----------------------------------------------------------------------------
