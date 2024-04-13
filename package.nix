@@ -68,6 +68,7 @@ stdenv.mkDerivation {
 
   mkdir -p $out/bin
 
+  ln -s $out/share/lcc-movcc/movcc $out/bin/movcc
   # install -m755 build/lcc $out/bin
   # ln -s $out/bin/lcc $out/bin/movcc
 
