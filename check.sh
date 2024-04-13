@@ -1,10 +1,10 @@
 #!/bin/sh
+set -eu
 
 # To verify that the M/o/Vfuscator is working correctly, this script will pull
 # down an open source AES implementation, compile it, objdump it, and run it.
 # The objdump will take some time, be patient.
 
-echo
 
 # M/o/Vfuscate the program
 echo "M/o/Vfuscating..."
