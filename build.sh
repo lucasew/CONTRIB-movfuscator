@@ -1,6 +1,7 @@
 #!/bin/sh
 
-set -v -eu
+set -v
+set -eu
 
 # create a build directory
 export BUILDDIR=`pwd`/build

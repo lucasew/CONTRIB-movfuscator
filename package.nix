@@ -1,5 +1,6 @@
 { stdenv
 , fetchFromGitHub
+, which
 }:
 
 stdenv.mkDerivation {
@@ -14,18 +15,28 @@ stdenv.mkDerivation {
       hash = "sha256-gq+zStRrnY8Avo7n1gZbNqlVll9BxMVtL/rgrMS34go=";
     };
   in ''
+    ln -s $out/share/lcc-movcc build
+
     cp -r ${lcc} lcc
     chmod -R 777 lcc
 
-    # substituteInPlace build.sh check.sh --replace 'git reset' 'echo git reset'
+    substituteInPlace build.sh check.sh \
+      --replace 'git reset' 'echo git reset' \
+      --replace 'BUILDDIR=`pwd`/build' BUILDDIR=$out/share/lcc-movcc
 
     substituteInPlace **/*.c \
       --replace-quiet /usr/bin/as "$(which as)" \
       --replace-quiet /usr/bin/ld "$(which ld)" \
-      --replace-quiet /usr/bin/cpp $out/bin/lcc
+      --replace-quiet /usr/bin/cpp "$out/share/lcc-movcc/cpp"
   '';
 
   src = ./.;
+
+  env = {
+    NIX_CFLAGS_COMPILE = "-D LCCDIR=\"${placeholder "out"}/share/lcc-movcc/\"";
+  };
+
+  nativeBuildInputs = [ which ];
 
   buildPhase = ''
   runHook preBuild
@@ -47,7 +58,7 @@ stdenv.mkDerivation {
 
   ln -s ${validationAes} validation/aes
 
-  MOVFUSCATOR_CPP=build/lcc bash check.sh
+  # bash check.sh
   
   runHook postCheck
   '';
@@ -57,9 +68,11 @@ stdenv.mkDerivation {
 
   mkdir -p $out/bin
 
-  install -m755 build/movcc $out/bin
-  install -m755 build/lcc $out/bin
+  # install -m755 build/lcc $out/bin
+  # ln -s $out/bin/lcc $out/bin/movcc
 
+  mkdir -p $out/src
+  cp -r . $out/src
 
   find -type f
   
