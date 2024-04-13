@@ -50,7 +50,7 @@ stdenv_32bit.mkDerivation {
 
   env
   
-  bash build.sh || true
+  bash build.sh
     
   runHook postBuild
   '';
