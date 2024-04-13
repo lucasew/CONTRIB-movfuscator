@@ -1,0 +1,8 @@
+[submodule "lcc"]
+	path = lcc
+	url = https://github.com/drh/lcc
+	branch = 3b3f01b4103cd7b519ae84bd1122c9b03233e687
+[submodule "validation/aes"]
+	path = validation/aes
+	url = https://github.com/kokke/tiny-AES128-C
+	branch = 7e42e693288bdf22d8e677da94248115168211b9
