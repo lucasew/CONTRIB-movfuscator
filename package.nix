@@ -1,10 +1,10 @@
-{ stdenv_32bit
+{ stdenv
 , fetchFromGitHub
 , which
 , makeWrapper
 }:
 
-stdenv_32bit.mkDerivation {
+stdenv.mkDerivation {
   pname = "movfuscator";
   version = "unstable-2020.2.11";
 
@@ -18,6 +18,15 @@ stdenv_32bit.mkDerivation {
       hash = "sha256-gq+zStRrnY8Avo7n1gZbNqlVll9BxMVtL/rgrMS34go=";
     };
   in ''
+    mkdir -p $out/bin
+
+    ln -s $out/share/lcc-movcc/cpp $out/bin/cpp
+
+    makeWrapper $(which ld) $out/bin/ld \
+      --add-flags '-L ${stdenv.cc.libc.out}/lib' \
+      --add-flags '-L $out/share/lcc-movcc/gcc' \
+      --add-flags '-I ${stdenv.cc.libc.dev}/include'
+
     ln -s $out/share/lcc-movcc build
 
     cp -r ${lcc} lcc
@@ -29,10 +38,10 @@ stdenv_32bit.mkDerivation {
 
     for item in **/*; do
       substituteInPlace $item \
-        --replace-quiet /usr/bin/as "$(which as)" \
-        --replace-quiet /usr/bin/ld "$(which ld)" \
-        --replace-quiet /usr/bin/cpp "$out/share/lcc-movcc/cpp" \
-        --replace-quiet /lib/ld-linux.so.2 "$(cat ${stdenv_32bit.cc}/nix-support/dynamic-linker)" \
+        --replace-quiet /usr/bin/as $(which as) \
+        --replace-quiet /usr/bin/ld $out/bin/ld \
+        --replace-quiet /usr/bin/cpp $out/bin/cpp \
+        --replace-quiet /lib/ld-linux.so.2 "$(cat ${stdenv.cc}/nix-support/dynamic-linker)" \
           || true
     done
   '';
@@ -40,7 +49,7 @@ stdenv_32bit.mkDerivation {
   src = ./.;
 
   env = {
-    NIX_CFLAGS_COMPILE = "-D LCCDIR=\"${placeholder "out"}/share/lcc-movcc/\"";
+    NIX_CFLAGS_COMPILE = "-D LCCDIR=\"${placeholder "out"}/share/lcc-movcc/\" -L $out/share/lcc-movcc/gcc";
   };
 
   nativeBuildInputs = [ which makeWrapper ];
@@ -50,7 +59,7 @@ stdenv_32bit.mkDerivation {
 
   env
   
-  bash build.sh
+  bash build.sh || true
     
   runHook postBuild
   '';
@@ -75,11 +84,9 @@ stdenv_32bit.mkDerivation {
   installPhase = ''
   runHook preInstall
 
-  mkdir -p $out/bin
-
   for item in $out/share/lcc-movcc/*; do
     if [ -x "$(realpath "$item")" ]; then
-      ln -s $item $out/bin
+      ln -sf $item $out/bin
     fi
   done
   # ln -s $out/share/lcc-movcc/movcc $out/bin/movcc
@@ -92,5 +99,12 @@ stdenv_32bit.mkDerivation {
   find -type f
   
   runHook postInstall
+  '';
+
+  fixupPhase = ''
+  runHook preFixup
+
+  
+  runHook postFixup
   '';
 }

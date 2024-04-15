@@ -33,6 +33,9 @@ patch -N -r - lcc/src/expr.c movfuscator/expr.patch
 # Add additional flag passing for lcc linker
 patch -N -r - lcc/etc/lcc.c movfuscator/lcc.patch
 
+# Quality of life fixes for lcc
+patch -d lcc < movfuscator/lcc_qol.patch || true
+
 # Build the compiler driver
 make -C lcc HOSTFILE=../movfuscator/host.c CFLAGS='-g -DLCCDIR=\"$(BUILDDIR)/\"' lcc
 

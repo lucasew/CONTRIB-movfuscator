@@ -1,0 +1,49 @@
+diff --git a/etc/lcc.c b/etc/lcc.c
+index 95b621a..210cb6f 100755
+--- a/etc/lcc.c
++++ b/etc/lcc.c
+@@ -164,7 +164,7 @@ main(int argc, char *argv[]) {
+ 		if (callsys(av))
+ 			errcnt++;
+ 	}
+-	rm(rmlist);	
++	cleanup();
+ 	return errcnt ? EXIT_FAILURE : EXIT_SUCCESS;
+ }
+ 
+@@ -239,6 +239,9 @@ static int _spawnvp(int mode, const char *cmdname, const char *const argv[]) {
+ 		status = -1;
+ 	if (status&0377) {
+ 		fprintf(stderr, "%s: fatal error in %s\n", progname, cmdname);
++		for (int i = 0; argv[i] != NULL; i++) {
++			fprintf(stderr, "args: %s\n", argv[i]);
++		}
+ 		status |= 0400;
+ 	}
+ 	return (status>>8)&0377;
+@@ -555,7 +558,7 @@ static void initinputs(void) {
+ 
+ /* interrupt - catch interrupt signals */
+ static void interrupt(int n) {
+-	rm(rmlist);
++	cleanup();
+ 	exit(n = 100);
+ }
+ 
+@@ -815,3 +818,16 @@ char *tempname(char *suffix) {
+ 	rmlist = append(name, rmlist);
+ 	return name;
+ }
++
++void cleanup() {
++	if (!getenv("NO_CLEANUP")) {
++		rm(rmlist);	
++	} else {
++		fprintf(stderr, "%s: NO_CLEANUP passed, not cleaning up\n", progname);
++		if (!rmlist) return;
++		List l = rmlist;
++		do {
++			fprintf(stderr, "%s/NO_CLEANUP: keeping '%s'\n", progname, l->str);
++		} while ((l = l->link) != rmlist);
++	}
++}
